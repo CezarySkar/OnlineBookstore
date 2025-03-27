@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +37,7 @@ namespace OnlineBookstoreAPI.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUsers()
         {
             var users = await _ctx.Users.ToListAsync();
@@ -44,9 +45,9 @@ namespace OnlineBookstoreAPI.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
+        public IActionResult Login([FromBody] LoginDto loginDto)
         {
-            var user = _ctx.Users.FirstOrDefault(u => u.Username == loginRequest.Email && u.Password == loginRequest.Password);
+            var user = _ctx.Users.FirstOrDefault(u => u.Username == loginDto.Username && u.Password == loginDto.Password);
             if (user == null)
             {
                 return Unauthorized();
@@ -55,10 +56,10 @@ namespace OnlineBookstoreAPI.Controllers
             switch (user.Role)
             {
                 case "Admin":
-                    var token = tokenService.GenerateToken(loginRequest.Email, "Admin");
+                    var token = tokenService.GenerateToken(loginDto.Username, "Admin");
                     return Ok(new {Token =  token});
-                case "standard":
-                    var tokenS = tokenService.GenerateToken(loginRequest.Email, "standard");
+                case "Standard":
+                    var tokenS = tokenService.GenerateToken(loginDto.Username, "Standard");
                     return Ok(new { Token = tokenS });
                 default: return BadRequest("Role not handlend yet.");
             }
